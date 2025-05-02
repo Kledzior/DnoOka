@@ -10,13 +10,16 @@ from skimage import morphology
 
 
 def classifyVessel(img):
-    # min_val = np.min(img)
-    # max_val = np.max(img)
+    min_val = np.min(img)
+    max_val = np.max(img)
     
     # # Ustawienie progu na połowę wartości między min a max
     # threshold = (min_val + max_val) / 2.0 daje avg dla zeros 89.45% i ones 47.91% (threshold == +- 0.85)
     # threshold = 0.73 #Daje avg dla zeros 74.27% i ones 66.1%
-    threshold = 0.72 #Daje avg dla zeros 72.54% i ones 68%
+    #threshold = 0.72 #Daje avg dla zeros 72.54% i ones 68%
+    threshold = 0.71 #Daje avg dla zeros 71.47% i ones 69%
+    if (threshold < min_val):
+        threshold = min_val + 0.01
 
     binaryMask = np.zeros_like(img,dtype=np.uint8)
     binaryMask[img > threshold] = 255
