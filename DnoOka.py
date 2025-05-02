@@ -16,8 +16,8 @@ def classifyVessel(img):
     # # Ustawienie progu na połowę wartości między min a max
     # threshold = (min_val + max_val) / 2.0 daje avg dla zeros 89.45% i ones 47.91% (threshold == +- 0.85)
     # threshold = 0.73 #Daje avg dla zeros 74.27% i ones 66.1%
-    # threshold = 0.72 #Daje avg dla zeros 72.54% i ones 68%
-    threshold = 0.71 #Daje avg dla zeros 72.54% i ones 68%
+    threshold = 0.72 #Daje avg dla zeros 72.54% i ones 68%
+
     binaryMask = np.zeros_like(img,dtype=np.uint8)
     binaryMask[img > threshold] = 255
 
