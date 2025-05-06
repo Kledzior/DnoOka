@@ -12,7 +12,8 @@ from skimage import morphology
 def classifyVessel(img):
     min_val = np.min(img)
     max_val = np.max(img)
-    
+    test=0
+    #test
     # # Ustawienie progu na połowę wartości między min a max
     # threshold = (min_val + max_val) / 2.0 daje avg dla zeros 89.45% i ones 47.91% (threshold == +- 0.85)
     # threshold = 0.73 #Daje avg dla zeros 74.27% i ones 66.1%
