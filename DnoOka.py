@@ -17,9 +17,9 @@ def classifyVessel(img):
     # threshold = (min_val + max_val) / 2.0 daje avg dla zeros 89.45% i ones 47.91% (threshold == +- 0.85)
     # threshold = 0.73 #Daje avg dla zeros 74.27% i ones 66.1%
     #threshold = 0.72 #Daje avg dla zeros 72.54% i ones 68%
-    threshold = 0.71 #Daje avg dla zeros 71.47% i ones 69%
-    if (threshold < min_val):
-        threshold = min_val + 0.01
+    threshold = min_val #Daje avg dla zeros 71.47% i ones 69%
+    # if (threshold < min_val):
+    #     threshold = min_val + 0.01
 
     binaryMask = np.zeros_like(img,dtype=np.uint8)
     binaryMask[img > threshold] = 255
@@ -74,7 +74,8 @@ def compute(n=5):#powinno generowac n obrazow przetworzonych
 
 def verifyEffectiveness(binaryMasks):#verify effectiveness potrzebuje otrzymac co najmniej 5 obrazow juz przetworzonych oraz ground truth
     groundTruths = []
-
+    srednieZero = []
+    srednieJeden=[]
     for i in range(1,len(binaryMasks)+1):
         binaryMask = binaryMasks[i-1]
         filename = f'groundTruth/{i:02d}_h.tif'
@@ -116,6 +117,10 @@ def verifyEffectiveness(binaryMasks):#verify effectiveness potrzebuje otrzymac c
         print("Hit ones - > ",countHitOnes)
         print(f"Percentile zeros - > {countHitZeros/countTrueZeros*100}%")
         print(f"Percentile ones - > {countHitOnes/countTrueOnes*100}%")
+        srednieZero.append(countHitZeros/countTrueZeros*100)
+        srednieJeden.append(countHitOnes/countTrueOnes*100)
+    print(sum(srednieZero)/5)
+    print(sum(srednieJeden)/5)
 
 def main():
     binaryMasks = compute()#Default n = 5
