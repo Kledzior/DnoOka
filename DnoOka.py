@@ -31,7 +31,16 @@ def getGreenArray(img):
     
     green_channel = img_np[:, :, 1]
     return green_channel
-    
+
+def westepnePrzetworzenie(img):
+    ######### Wstępne przetworzenie obrazu #########
+    imgGreen = getGreenArray(img)
+    imgGreenNorm = exposure.equalize_hist(imgGreen)       # poprawa kontrastu
+    imgGreenBlur = gaussian(imgGreenNorm, sigma=1)        # redukcja szumu
+    plt.imshow(imgGreenBlur,cmap='gray',aspect='auto')
+    plt.show()
+    return imgGreenBlur
+
 def compute(n=5):#powinno generowac n obrazow przetworzonych
     images = [] # Lista do przechowywania obrazów
     binaryMasks = [] #Lista do przechowywania obrazów przetworzonych
@@ -43,12 +52,8 @@ def compute(n=5):#powinno generowac n obrazow przetworzonych
         # img = images[i-1]
         # size = img.size
 
-        ######### Wstępne przetworzenie obrazu #########
-        imgGreen = getGreenArray(img)
-        imgGreenNorm = exposure.equalize_hist(imgGreen)       # poprawa kontrastu
-        imgGreenBlur = gaussian(imgGreenNorm, sigma=1)        # redukcja szumu
-        plt.imshow(imgGreenBlur,cmap='gray',aspect='auto')
-        plt.show()
+        imgGreenBlur = westepnePrzetworzenie(img)
+
         ######### Wlasciwe przetworzenie obrazu #########
         frangiGreen = frangi(imgGreenBlur)
         plt.imshow(frangiGreen,cmap='gray',aspect='auto')
