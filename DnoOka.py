@@ -107,6 +107,7 @@ def verifyEffectiveness(binaryMasks):#verify effectiveness potrzebuje otrzymac c
                     totalNumberOfPixels += 1
                     if(groundTruthNp[j,k] == 255):
                         countTrueOnes += 1
+                        # print(binaryMask[j,k])
                         if(binaryMask[j,k] == 255):
                             countHitOnes += 1
 
@@ -124,8 +125,8 @@ def verifyEffectiveness(binaryMasks):#verify effectiveness potrzebuje otrzymac c
         print(f"Percentile ones - > {countHitOnes/countTrueOnes*100}%")
         srednieZero.append(countHitZeros/countTrueZeros*100)
         srednieJeden.append(countHitOnes/countTrueOnes*100)
-    print(sum(srednieZero)/5)
-    print(sum(srednieJeden)/5)
+    print(sum(srednieZero)/len(binaryMasks))
+    print(sum(srednieJeden)/len(binaryMasks))
 
 def main():
     binaryMasks = compute()#Default n = 5
