@@ -5,8 +5,7 @@ import matplotlib.pyplot as plt
 from skimage.color import rgb2gray
 from skimage.filters import gaussian
 from skimage import exposure
-from skimage.measure import label, regionprops
-from skimage import morphology
+
 
 
 def classifyVessel(img):
@@ -33,13 +32,15 @@ def getGreenArray(img):
     green_channel = img_np[:, :, 1]
     return green_channel
 
-def westepnePrzetworzenie(img):
+def westepnePrzetworzenie(img,show=True):
     ######### Wstępne przetworzenie obrazu #########
     imgGreen = getGreenArray(img)
     imgGreenNorm = exposure.equalize_hist(imgGreen)       # poprawa kontrastu
     imgGreenBlur = gaussian(imgGreenNorm, sigma=1)        # redukcja szumu
-    plt.imshow(imgGreenBlur,cmap='gray',aspect='auto')
-    plt.show()
+    if (show==True):
+        plt.imshow(imgGreenBlur,cmap='gray',aspect='auto')
+        plt.title("Obraz po wstepnym Przetworzeniu")
+        plt.show()
     return imgGreenBlur
 
 def compute(n=5):#powinno generowac n obrazow przetworzonych
@@ -58,12 +59,14 @@ def compute(n=5):#powinno generowac n obrazow przetworzonych
         ######### Wlasciwe przetworzenie obrazu #########
         frangiGreen = frangi(imgGreenBlur)
         plt.imshow(frangiGreen,cmap='gray',aspect='auto')
+        plt.title("Obraz po zastosowaniu filtra frangiego")
         plt.show()
 
 
         ######### Końcowe przetwarzanie obrazu #########
         frangiGreenEqualized = exposure.equalize_hist(frangiGreen)
         plt.imshow(frangiGreenEqualized,cmap='gray',aspect='auto')
+        plt.title("Koncowe przetwarzanie obrazu")
         plt.show()
 
 
@@ -72,6 +75,7 @@ def compute(n=5):#powinno generowac n obrazow przetworzonych
         binaryMasks.append(binaryMask)
         # Wyświetlanie obrazu
         plt.imshow(binaryMask,cmap='gray',aspect='auto')
+        plt.title("Binarna maska odpowiedzi algorytmu")
         plt.show()
 
     return binaryMasks
@@ -129,9 +133,12 @@ def verifyEffectiveness(binaryMasks):#verify effectiveness potrzebuje otrzymac c
     print(sum(srednieZero)/len(binaryMasks))
     print(sum(srednieJeden)/len(binaryMasks))
 
-def main():
-    binaryMasks = compute()#Default n = 5
+def computeAndVerify(n):
+    binaryMasks = compute(n)#Default n = 5
     verifyEffectiveness(binaryMasks)
+
+def main():
+    computeAndVerify()
   
 
 

@@ -4,17 +4,17 @@ from PIL import Image
 from skimage.filters import frangi
 import numpy as np
 import matplotlib.pyplot as plt
-from skimage.color import rgb2gray
-from skimage.filters import gaussian
-from skimage import exposure
-from skimage.measure import label, regionprops
-from skimage import morphology
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, accuracy_score
 from joblib import Parallel, delayed
 from time import time
-from sklearn.ensemble import RandomForestClassifier
+import sys
+import os
+
+
+def suppress_tk_errors():
+    sys.stderr = open(os.devnull, 'w')
 
 def wytnijFragmentyIEtykiery(img,groundTruth,fieldOfView,windowSize = 5, procent = 0.01):
     height, width = img.shape
@@ -70,63 +70,147 @@ def probaPierwsza(groundTruthNp,img,fieldOfView,clf,windowSize):#czas mielenia n
             i, j, pred = result
             prediction_mask[i, j] = 255 if pred == 255 else 0
     return prediction_mask
-def main():
-    filename = f'images/{1:02d}_h.jpg'  # Formatowanie np. 01_h.jpg, 02_h.jpg, ...
+
+def buildClassifier():
+    suppress_tk_errors()
+    filename = 'images/01_h.jpg'
     img = Image.open(filename)
-    print(img.size)
-    # img.show()
-
-    img = westepnePrzetworzenie(img)
-
+    img = westepnePrzetworzenie(img,False)
+    
     groundTruth = Image.open("groundTruth/01_h.tif")
     groundTruthNp = np.array(groundTruth)
-    groundTruth.show()
+    # plt.imshow(groundTruth,cmap='gray',aspect='auto')
+    # plt.title("Ground Truth")
+    # plt.show()
 
     fieldOfView = Image.open("fieldOfView/01_h_mask.tif")
     grayFieldOfView = fieldOfView.convert('L')
     fieldOfView = np.array(grayFieldOfView)
 
-    start_time = time()
-    X,y = wytnijFragmentyIEtykiery(img,groundTruthNp,fieldOfView)#opcjonalnie mozna dac parametr windowSize
-
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)# mozna dodac parametr random_state=42 wtedy za kazdym razem dane beda dzielone tak samo
+    X,y = wytnijFragmentyIEtykiery(img,groundTruthNp,fieldOfView)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
     clf = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, max_depth=3)
-
     clf.fit(X_train,y_train)
-
-
     y_pred = clf.predict(X_test)
-
     print("Accuracy:", accuracy_score(y_test, y_pred))
     print(classification_report(y_test, y_pred))
 
-    prediction_mask = np.zeros_like(groundTruthNp, dtype=np.uint8)
-
+    return clf
+def classifyAndVerify(n):
+    suppress_tk_errors()
+    images = [] # Lista do przechowywania obrazów
+    binaryMasks = [] #Lista do przechowywania obrazów przetworzonych
+    clf = buildClassifier()
     windowSize = 5
 
-    height, width = img.shape
+    for i in range(1, n+1):  
+        filename = f'images/{i:02d}_h.jpg'  # Formatowanie np. 01_h.jpg, 02_h.jpg, ...
+        img = Image.open(filename)
+        images.append(img)
     
-    prediction_mask = probaPierwsza(groundTruthNp,img,fieldOfView,clf,windowSize)
+        img = westepnePrzetworzenie(img)
+
+        groundTruth = Image.open(f"groundTruth/{i:02d}_h.tif")
+        groundTruthNp = np.array(groundTruth)
+        plt.imshow(groundTruth,cmap='gray',aspect='auto')
+        plt.title("Ground Truth")
+        plt.show()
+
+        fieldOfView = Image.open("fieldOfView/01_h_mask.tif")
+        grayFieldOfView = fieldOfView.convert('L')
+        fieldOfView = np.array(grayFieldOfView)
+        
+        start_time = time()
+        # X,y = wytnijFragmentyIEtykiery(img,groundTruthNp,fieldOfView)
+        # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
+        # clf = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, max_depth=3)
+        # clf.fit(X_train,y_train)
+        # y_pred = clf.predict(X_test)
+        # print("Accuracy:", accuracy_score(y_test, y_pred))
+        # print(classification_report(y_test, y_pred))
+
+        
+        prediction_mask = probaPierwsza(groundTruthNp,img,fieldOfView,clf,windowSize)
+        
+        # prediction_mask = groundTruthNp
+        binaryMasks.append(prediction_mask)
+
+        end_time = time()
+        execution_time = end_time - start_time
+        print(f"Czas wykonania: {execution_time:.2f} sekundy")
+        plt.figure(figsize=(10, 5))
+        plt.subplot(1, 2, 1)
+        plt.title("Ground Truth")
+        plt.imshow(groundTruthNp, cmap='gray')
+        plt.axis('off')
+
+        plt.subplot(1, 2, 2)
+        plt.title("Predykcja modelu")
+        plt.imshow(prediction_mask, cmap='gray')
+        plt.axis('off')
+
+        plt.tight_layout()
+        plt.show()
+
+    if(len(binaryMasks) == 1):
+        verifyEffectiveness([prediction_mask])
+    else:
+        verifyEffectiveness(binaryMasks)
+
+    return binaryMasks
+
+def main():
+    # filename = f'images/{1:02d}_h.jpg'  # Formatowanie np. 01_h.jpg, 02_h.jpg, ...
+    # img = Image.open(filename)
+
+
+    # img = westepnePrzetworzenie(img)
+
+    # groundTruth = Image.open("groundTruth/01_h.tif")
+    # groundTruthNp = np.array(groundTruth)
+    # groundTruth.show()
+
+    # fieldOfView = Image.open("fieldOfView/01_h_mask.tif")
+    # grayFieldOfView = fieldOfView.convert('L')
+    # fieldOfView = np.array(grayFieldOfView)
+
+    # start_time = time()
+    # X,y = wytnijFragmentyIEtykiery(img,groundTruthNp,fieldOfView)#opcjonalnie mozna dac parametr windowSize
+
+    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)# mozna dodac parametr random_state=42 wtedy za kazdym razem dane beda dzielone tak samo
+    # clf = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, max_depth=3)
+
+    # clf.fit(X_train,y_train)
+
+
+    # y_pred = clf.predict(X_test)
+
+    # print("Accuracy:", accuracy_score(y_test, y_pred))
+    # print(classification_report(y_test, y_pred))
+
+    # windowSize = 5
+    # prediction_mask = probaPierwsza(groundTruthNp,img,fieldOfView,clf,windowSize)
     
-    verifyEffectiveness([prediction_mask])
+    # verifyEffectiveness([prediction_mask])
 
 
-    end_time = time()
-    execution_time = end_time - start_time
-    print(f"Czas wykonania: {execution_time:.2f} sekundy")
-    plt.figure(figsize=(10, 5))
-    plt.subplot(1, 2, 1)
-    plt.title("Ground Truth")
-    plt.imshow(groundTruthNp, cmap='gray')
-    plt.axis('off')
+    # end_time = time()
+    # execution_time = end_time - start_time
+    # print(f"Czas wykonania: {execution_time:.2f} sekundy")
+    # plt.figure(figsize=(10, 5))
+    # plt.subplot(1, 2, 1)
+    # plt.title("Ground Truth")
+    # plt.imshow(groundTruthNp, cmap='gray')
+    # plt.axis('off')
 
-    plt.subplot(1, 2, 2)
-    plt.title("Predykcja modelu")
-    plt.imshow(prediction_mask, cmap='gray')
-    plt.axis('off')
+    # plt.subplot(1, 2, 2)
+    # plt.title("Predykcja modelu")
+    # plt.imshow(prediction_mask, cmap='gray')
+    # plt.axis('off')
 
-    plt.tight_layout()
-    plt.show()
+    # plt.tight_layout()
+    # plt.show()
+    classifyAndVerify(1)
 
 if __name__ == "__main__":
     main()
