@@ -1,10 +1,11 @@
 import tkinter as tk
 from DnoOka import computeAndVerify
 from Klasyfikator import classifyAndVerify
+from train_unet import UNET
 from multiprocessing import Process
 import sys
 import os
-from UNET import segmentWithUNet
+
 
 def main():
     root = tk.Tk()
@@ -31,11 +32,9 @@ def main():
     
     btn1 = tk.Button(root, text="Filtr Frangiego wraz ze wstępnym i końcowym przetwarzaniem", command=lambda: uruchom_funkcje(computeAndVerify))
     btn2 = tk.Button(root, text="Przeprowadz klasyfikacje z wykorzystaniem GradientBoostingClassifier", command=lambda: uruchom_funkcje(classifyAndVerify))
-
+    btn3 = tk.Button(root, text="UNET", command=lambda: uruchom_funkcje(UNET))
     btn1.pack(pady=10)
     btn2.pack(pady=10)
-
-    btn3 = tk.Button(root, text="Segmentacja z wykorzystaniem U-Net", command=lambda: uruchom_funkcje(segmentWithUNet))
     btn3.pack(pady=10)
 
     root.mainloop()

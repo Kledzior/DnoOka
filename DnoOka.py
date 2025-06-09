@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from skimage.color import rgb2gray
 from skimage.filters import gaussian
 from skimage import exposure
-
+import cv2
 
 
 def classifyVessel(img):
@@ -32,15 +32,35 @@ def getGreenArray(img):
     green_channel = img_np[:, :, 1]
     return green_channel
 
-def westepnePrzetworzenie(img,show=True):
+def westepnePrzetworzenie(img, show=True):
     ######### Wstępne przetworzenie obrazu #########
     imgGreen = getGreenArray(img)
-    imgGreenNorm = exposure.equalize_hist(imgGreen)       # poprawa kontrastu
-    imgGreenBlur = gaussian(imgGreenNorm, sigma=1)        # redukcja szumu
-    if (show==True):
-        plt.imshow(imgGreenBlur,cmap='gray',aspect='auto')
-        plt.title("Obraz po wstepnym Przetworzeniu")
+
+    # Upewnij się, że dane są typu uint8, bo tego wymaga CLAHE
+    if imgGreen.max() <= 1.0:
+        imgGreen_uint8 = (imgGreen * 255).astype(np.uint8)
+    else:
+        imgGreen_uint8 = imgGreen.astype(np.uint8)
+
+    # Zastosowanie CLAHE
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    imgGreenCLAHE = clahe.apply(imgGreen_uint8)
+
+    print("Przykładowy piksel przed CLAHE:", imgGreen[0][25])
+    print("Po CLAHE:", imgGreenCLAHE[0][25])
+
+    # Normalizacja do zakresu [0,1] przed filtrem Gaussa
+    imgGreenCLAHE = imgGreenCLAHE.astype(np.float32) / 255.0
+
+    # Redukcja szumu
+    imgGreenBlur = gaussian(imgGreenCLAHE, sigma=1)
+
+    if show:
+        plt.imshow(imgGreenBlur, cmap='gray', aspect='auto')
+        plt.title("Obraz po wstępnym przetworzeniu (CLAHE)")
+        plt.axis('off')
         plt.show()
+
     return imgGreenBlur
 
 def compute(n=5):#powinno generowac n obrazow przetworzonych

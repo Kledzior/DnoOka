@@ -129,9 +129,12 @@ def train(images, masks, epochs=10, batch_size=8, lr=1e-4):
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     criterion = DiceLoss()
 
+    average_losses = []  # <-- lista do zapisu strat
+
     for epoch in range(epochs):
         model.train()
         running_loss = 0.0
+
         for i, (inputs, targets) in enumerate(loader):
             inputs, targets = inputs.to(device), targets.to(device)
             outputs = model(inputs)
@@ -145,10 +148,20 @@ def train(images, masks, epochs=10, batch_size=8, lr=1e-4):
             if (i + 1) % 10 == 0 or (i + 1) == len(loader):
                 print(f"Epoch [{epoch+1}/{epochs}], Step [{i+1}/{len(loader)}], Loss: {loss.item():.4f}")
 
-        print(f"Epoch [{epoch+1}/{epochs}] finished. Average Loss: {running_loss/len(loader):.4f}")
+        avg_loss = running_loss / len(loader)
+        average_losses.append(avg_loss)
+        print(f"Epoch [{epoch+1}/{epochs}] finished. Average Loss: {avg_loss:.4f}")
 
-
+    plt.figure(figsize=(8, 5))
+    plt.plot(range(1, epochs + 1), average_losses, marker='o', color='b')
+    plt.title('Average Loss per Epoch')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
     return model
+
 
 def show_prediction(model, image, fov):
     model.eval()
@@ -176,7 +189,10 @@ def show_prediction(model, image, fov):
 
     plt.show()
 
-if __name__ == "__main__":
+
+
+
+def UNET(dummy_arg=None):
     filenames = [f"{i:02d}_h.jpg" for i in range(1,16)]
     filenamesFOV = [f"{i:02d}_h_mask.jpg" for i in range(1,16)]
     images = load_images("images", filenames)
@@ -188,9 +204,16 @@ if __name__ == "__main__":
     print("fieldOfView shape:", fieldOfView.shape)
 
     # dalej możesz użyć images i groundTruth do trenowania:
-    model = train(images, groundTruth, epochs=35,batch_size=12)
+    model = train(images, groundTruth, epochs=50,batch_size=12)
 
     # i np. pokazać wynik na pierwszym obrazku
-    show_prediction(model, images[0], fieldOfView[0])
+    show_prediction(model, images, fieldOfView[0])
+
+
+
+
+if __name__ == "__main__":
+    UNET()
+    
 
 
