@@ -107,6 +107,7 @@ def classifyAndVerify(n):
         filename = f'images/{i:02d}_h.jpg'  # Formatowanie np. 01_h.jpg, 02_h.jpg, ...
         img = Image.open(filename)
         images.append(img)
+
     
         img = westepnePrzetworzenie(img)
 

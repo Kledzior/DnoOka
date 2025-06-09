@@ -5,9 +5,22 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from PIL import Image
+from sklearn.model_selection import train_test_split
+def print_pixel_stats(img_name, gt_mask, pred_mask):
+    total_pixels = gt_mask.size
+    true_zeros = np.sum(gt_mask == 0)
+    true_ones = np.sum(gt_mask == 1)
 
+    hit_zeros = np.sum((gt_mask == 0) & (pred_mask == 0))
+    hit_ones = np.sum((gt_mask == 1) & (pred_mask == 1))
 
-def load_images(folder, filenames, resize=(256, 256)):
+    perc_zeros = 100 * hit_zeros / true_zeros if true_zeros > 0 else 0
+    perc_ones = 100 * hit_ones / true_ones if true_ones > 0 else 0
+
+    print(f"Image '{img_name}' Total number of pixels {total_pixels} True zeros - > {true_zeros} True ones - > {true_ones} Hit zeros - > {hit_zeros} Hit ones - > {hit_ones} Percentile zeros - > {perc_zeros}% Percentile ones - > {perc_ones}%")
+
+n=1
+def load_images(folder, filenames, resize=(256*n, 256*n)):
     imgs = []
     for f in filenames:
         path = os.path.join(folder, f)
@@ -15,7 +28,7 @@ def load_images(folder, filenames, resize=(256, 256)):
         imgs.append(np.array(img))
     return np.array(imgs)
 
-def load_masks(folder, filenames, resize=(256, 256)):
+def load_masks(folder, filenames, resize=(256*n, 256*n)):
     masks = []
     for f in filenames:
         tif_name = f.replace('.jpg', '.tif')
@@ -24,7 +37,7 @@ def load_masks(folder, filenames, resize=(256, 256)):
         masks.append(np.array(img) / 255)
     return np.array(masks)
 
-def load_fieldOfView(folder, filenames, resize=(256, 256)):
+def load_fieldOfView(folder, filenames, resize=(256*n, 256*n)):
     fovs = []
     for f in filenames:
         tif_name = f.replace('.jpg', '.tif')
@@ -119,23 +132,27 @@ class SegmentationDataset(Dataset):
 
 
 
-def train(images, masks, epochs=10, batch_size=8, lr=1e-4):
+def train(train_images, train_masks, val_images, val_masks, epochs=10, batch_size=8, lr=1e-4):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    dataset = SegmentationDataset(images, masks)
-    loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    train_dataset = SegmentationDataset(train_images, train_masks)
+    val_dataset = SegmentationDataset(val_images, val_masks)
+
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
     model = UNet(in_channels=3, out_channels=1).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     criterion = DiceLoss()
 
-    average_losses = []  # <-- lista do zapisu strat
+    train_losses = []
+    val_losses = []
 
     for epoch in range(epochs):
         model.train()
         running_loss = 0.0
 
-        for i, (inputs, targets) in enumerate(loader):
+        for i, (inputs, targets) in enumerate(train_loader):
             inputs, targets = inputs.to(device), targets.to(device)
             outputs = model(inputs)
 
@@ -145,21 +162,35 @@ def train(images, masks, epochs=10, batch_size=8, lr=1e-4):
             optimizer.step()
             running_loss += loss.item()
 
-            if (i + 1) % 10 == 0 or (i + 1) == len(loader):
-                print(f"Epoch [{epoch+1}/{epochs}], Step [{i+1}/{len(loader)}], Loss: {loss.item():.4f}")
+        avg_train_loss = running_loss / len(train_loader)
+        train_losses.append(avg_train_loss)
 
-        avg_loss = running_loss / len(loader)
-        average_losses.append(avg_loss)
-        print(f"Epoch [{epoch+1}/{epochs}] finished. Average Loss: {avg_loss:.4f}")
+        # Walidacja
+        model.eval()
+        val_loss = 0.0
+        with torch.no_grad():
+            for inputs, targets in val_loader:
+                inputs, targets = inputs.to(device), targets.to(device)
+                outputs = model(inputs)
+                loss = criterion(outputs, targets)
+                val_loss += loss.item()
+        avg_val_loss = val_loss / len(val_loader)
+        val_losses.append(avg_val_loss)
 
-    plt.figure(figsize=(8, 5))
-    plt.plot(range(1, epochs + 1), average_losses, marker='o', color='b')
-    plt.title('Average Loss per Epoch')
+        print(f"Epoch {epoch+1}/{epochs}, Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}")
+
+    # Wykresy
+    plt.figure(figsize=(8,5))
+    plt.plot(range(1, epochs+1), train_losses, label='Train Loss', marker='o')
+    plt.plot(range(1, epochs+1), val_losses, label='Val Loss', marker='x')
+    plt.title('Loss per Epoch')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
+    plt.legend()
     plt.grid(True)
     plt.tight_layout()
     plt.show()
+
     return model
 
 
@@ -169,7 +200,7 @@ def show_prediction(model, image, fov):
         x = torch.tensor(image / 255.0).permute(2, 0, 1).unsqueeze(0).float()
         pred = model(x).squeeze().cpu().numpy()
 
-        masked_pred = pred * fov  # Maska pola widzenia
+        masked_pred = pred * fov
 
     plt.figure(figsize=(12,5))
     plt.subplot(1,3,1)
@@ -192,22 +223,44 @@ def show_prediction(model, image, fov):
 
 
 
-def UNET(dummy_arg=None):
+def UNET(liczba=1):
     filenames = [f"{i:02d}_h.jpg" for i in range(1,16)]
     filenamesFOV = [f"{i:02d}_h_mask.jpg" for i in range(1,16)]
     images = load_images("images", filenames)
     groundTruth = load_masks("groundTruth", filenames)
     fieldOfView = load_fieldOfView("fieldOfView", filenamesFOV)
 
+
+
+    train_imgs, val_imgs, train_masks, val_masks, train_fovs, val_fovs = train_test_split(images, groundTruth, fieldOfView, test_size=0.2, random_state=42)
+
     print("images shape:", images.shape)
     print("groundTruth shape:", groundTruth.shape)
     print("fieldOfView shape:", fieldOfView.shape)
 
     # dalej możesz użyć images i groundTruth do trenowania:
-    model = train(images, groundTruth, epochs=50,batch_size=12)
+    model = train(train_imgs, train_masks, val_imgs, val_masks, epochs=100, batch_size=12)
 
-    # i np. pokazać wynik na pierwszym obrazku
-    show_prediction(model, images, fieldOfView[0])
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.eval()
+
+    # Analiza liczby obrazów podanej jako argument funkcji
+    liczba = min(liczba, len(images))  
+
+    with torch.no_grad():
+        for i in range(liczba):
+            img = images[i] / 255.0
+            x = torch.tensor(img).permute(2, 0, 1).unsqueeze(0).float().to(device)
+            pred = model(x).squeeze().cpu().numpy()
+            pred_mask = (pred * fieldOfView[i] > 0.5).astype(np.uint8)  # binarna predykcja z maskowaniem FoV
+
+            gt_mask = groundTruth[i].astype(np.uint8)
+
+            # Wypisz statystyki
+            print_pixel_stats(f"images/{i+1:02d}_h.jpg", gt_mask, pred_mask)
+
+            # Opcjonalnie: wyświetl predykcję
+            show_prediction(model, images[i], fieldOfView[i])
 
 
 
