@@ -160,56 +160,7 @@ def classifyAndVerify(n):
     return binaryMasks
 
 def main():
-    # filename = f'images/{1:02d}_h.jpg'  # Formatowanie np. 01_h.jpg, 02_h.jpg, ...
-    # img = Image.open(filename)
 
-
-    # img = westepnePrzetworzenie(img)
-
-    # groundTruth = Image.open("groundTruth/01_h.tif")
-    # groundTruthNp = np.array(groundTruth)
-    # groundTruth.show()
-
-    # fieldOfView = Image.open("fieldOfView/01_h_mask.tif")
-    # grayFieldOfView = fieldOfView.convert('L')
-    # fieldOfView = np.array(grayFieldOfView)
-
-    # start_time = time()
-    # X,y = wytnijFragmentyIEtykiery(img,groundTruthNp,fieldOfView)#opcjonalnie mozna dac parametr windowSize
-
-    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)# mozna dodac parametr random_state=42 wtedy za kazdym razem dane beda dzielone tak samo
-    # clf = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, max_depth=3)
-
-    # clf.fit(X_train,y_train)
-
-
-    # y_pred = clf.predict(X_test)
-
-    # print("Accuracy:", accuracy_score(y_test, y_pred))
-    # print(classification_report(y_test, y_pred))
-
-    # windowSize = 5
-    # prediction_mask = probaPierwsza(groundTruthNp,img,fieldOfView,clf,windowSize)
-    
-    # verifyEffectiveness([prediction_mask])
-
-
-    # end_time = time()
-    # execution_time = end_time - start_time
-    # print(f"Czas wykonania: {execution_time:.2f} sekundy")
-    # plt.figure(figsize=(10, 5))
-    # plt.subplot(1, 2, 1)
-    # plt.title("Ground Truth")
-    # plt.imshow(groundTruthNp, cmap='gray')
-    # plt.axis('off')
-
-    # plt.subplot(1, 2, 2)
-    # plt.title("Predykcja modelu")
-    # plt.imshow(prediction_mask, cmap='gray')
-    # plt.axis('off')
-
-    # plt.tight_layout()
-    # plt.show()
     classifyAndVerify(1)
 
 if __name__ == "__main__":
