@@ -4,7 +4,7 @@ from Klasyfikator import classifyAndVerify
 from multiprocessing import Process
 import sys
 import os
-
+from UNET import segmentWithUNet
 
 def main():
     root = tk.Tk()
@@ -34,6 +34,9 @@ def main():
 
     btn1.pack(pady=10)
     btn2.pack(pady=10)
+
+    btn3 = tk.Button(root, text="Segmentacja z wykorzystaniem U-Net", command=lambda: uruchom_funkcje(segmentWithUNet))
+    btn3.pack(pady=10)
 
     root.mainloop()
 

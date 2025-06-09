@@ -133,7 +133,7 @@ def verifyEffectiveness(binaryMasks):#verify effectiveness potrzebuje otrzymac c
     print(sum(srednieZero)/len(binaryMasks))
     print(sum(srednieJeden)/len(binaryMasks))
 
-def computeAndVerify(n):
+def computeAndVerify(n=5):
     binaryMasks = compute(n)#Default n = 5
     verifyEffectiveness(binaryMasks)
 
