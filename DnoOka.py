@@ -46,8 +46,8 @@ def westepnePrzetworzenie(img, show=True):
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     imgGreenCLAHE = clahe.apply(imgGreen_uint8)
 
-    print("Przykładowy piksel przed CLAHE:", imgGreen[0][25])
-    print("Po CLAHE:", imgGreenCLAHE[0][25])
+    # print("Przykładowy piksel przed CLAHE:", imgGreen[0][25])
+    # print("Po CLAHE:", imgGreenCLAHE[0][25])
 
     # Normalizacja do zakresu [0,1] przed filtrem Gaussa
     imgGreenCLAHE = imgGreenCLAHE.astype(np.float32) / 255.0

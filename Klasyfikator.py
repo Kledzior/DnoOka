@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, accuracy_score
-from joblib import Parallel, delayed
+from joblib import Parallel, delayed, dump, load
 from time import time
 import sys
 import os
@@ -71,12 +71,20 @@ def probaPierwsza(groundTruthNp,img,fieldOfView,clf,windowSize):#czas mielenia n
             prediction_mask[i, j] = 255 if pred == 255 else 0
     return prediction_mask
 
-def buildClassifier():
+def buildClassifier(train):
     suppress_tk_errors()
+    if(train == False):
+        model_path = 'model/gradient_boosting_model.joblib'
+        if os.path.exists(model_path):
+            print("Model znaleziony, wczytywanie...")
+            clf = load(model_path)
+            return clf
+        print("Model nie znaleziony, trenowanie od nowa...")
+    
     filename = 'images/01_h.jpg'
     img = Image.open(filename)
     img = westepnePrzetworzenie(img,False)
-    
+
     groundTruth = Image.open("groundTruth/01_h.tif")
     groundTruthNp = np.array(groundTruth)
     # plt.imshow(groundTruth,cmap='gray',aspect='auto')
@@ -94,13 +102,13 @@ def buildClassifier():
     y_pred = clf.predict(X_test)
     print("Accuracy:", accuracy_score(y_test, y_pred))
     print(classification_report(y_test, y_pred))
-
+    dump(clf, 'model/gradient_boosting_model.joblib')
     return clf
-def classifyAndVerify(n):
+def classifyAndVerify(n,train):
     suppress_tk_errors()
     images = [] # Lista do przechowywania obrazów
     binaryMasks = [] #Lista do przechowywania obrazów przetworzonych
-    clf = buildClassifier()
+    clf = buildClassifier(train)
     windowSize = 5
 
     for i in range(1, n+1):  
