@@ -5,6 +5,7 @@ from train_unet import UNET
 from multiprocessing import Process
 import sys
 import os
+from tkinter import messagebox
 
 
 def main():
@@ -18,14 +19,30 @@ def main():
     liczba_entry = tk.Entry(root)
     liczba_entry.pack(pady=5)
 
+    label2 = tk.Label(root, text="Wprowadz liczbe Epoch w UNet")
+    label2.pack(pady=5)
+    liczba2_entry = tk.Entry(root)
+    liczba2_entry.pack(pady=5)
+
 
     def uruchom_funkcje(funkcja, *args):
         try:
             liczba = int(liczba_entry.get())
-            p = Process(target=funkcja, args=(liczba, *args))
-            p.start()
+            if funkcja==UNET and trainUNET.get():
+                try:
+                    liczbaEpoch = int(liczba2_entry.get())
+                    flagaTrening = args[0]
+                    p = Process(target=funkcja, args=(liczba, flagaTrening, liczbaEpoch))
+                    p.start()
+                except ValueError:
+                    messagebox.showerror("Błąd", "Wprowadź poprawną liczbę całkowitą epoch.")
+            else:
+                p = Process(target=funkcja, args=(liczba, *args))
+                p.start()
         except ValueError:
-            print("Wprowadź poprawną liczbę całkowitą.")
+            messagebox.showerror("Błąd", "Wprowadź poprawną liczbę całkowitą dla liczby obrazów.")
+
+
 
 
     trainModelGradBoost = tk.BooleanVar(value=False)

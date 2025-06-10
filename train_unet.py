@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import os
 from PIL import Image
 from sklearn.model_selection import train_test_split
+from tkinter import messagebox
+
 def print_pixel_stats(img_name, gt_mask, pred_mask):
     total_pixels = gt_mask.size
     true_zeros = np.sum(gt_mask == 0)
@@ -223,29 +225,40 @@ def show_prediction(model, image, fov):
 
 
 
-def UNET(liczba=1):
+def UNET(liczba=1,flaga=True,epochs=100):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     filenames = [f"{i:02d}_h.jpg" for i in range(1,16)]
     filenamesFOV = [f"{i:02d}_h_mask.jpg" for i in range(1,16)]
     images = load_images("images", filenames)
     groundTruth = load_masks("groundTruth", filenames)
     fieldOfView = load_fieldOfView("fieldOfView", filenamesFOV)
+    if flaga==True:
 
 
 
-    train_imgs, val_imgs, train_masks, val_masks, train_fovs, val_fovs = train_test_split(images, groundTruth, fieldOfView, test_size=0.2, random_state=42)
 
-    print("images shape:", images.shape)
-    print("groundTruth shape:", groundTruth.shape)
-    print("fieldOfView shape:", fieldOfView.shape)
 
-    # dalej możesz użyć images i groundTruth do trenowania:
-    model = train(train_imgs, train_masks, val_imgs, val_masks, epochs=100, batch_size=12)
+        train_imgs, val_imgs, train_masks, val_masks, train_fovs, val_fovs = train_test_split(images, groundTruth, fieldOfView, test_size=0.2, random_state=42)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.eval()
+        print("images shape:", images.shape)
+        print("groundTruth shape:", groundTruth.shape)
+        print("fieldOfView shape:", fieldOfView.shape)
 
-    # Analiza liczby obrazów podanej jako argument funkcji
-    liczba = min(liczba, len(images))  
+        # dalej możesz użyć images i groundTruth do trenowania:
+        model = train(train_imgs, train_masks, val_imgs, val_masks, epochs, batch_size=12)
+
+        
+        model.eval()
+        torch.save(model.state_dict(), "model/unet_model.pth")
+    else:
+        if not os.path.exists("model/unet_model.pth"):
+            messagebox.showerror("Błąd", "Plik 'unet_model.pth' nie istnieje.\nWykonaj najpierw trening modelu UNET.")
+            return
+        model = UNet(in_channels=3, out_channels=1)
+        model.load_state_dict(torch.load("model/unet_model.pth"))
+        model.to(device)
+        model.eval()
+
 
     with torch.no_grad():
         for i in range(liczba):
@@ -256,10 +269,8 @@ def UNET(liczba=1):
 
             gt_mask = groundTruth[i].astype(np.uint8)
 
-            # Wypisz statystyki
             print_pixel_stats(f"images/{i+1:02d}_h.jpg", gt_mask, pred_mask)
 
-            # Opcjonalnie: wyświetl predykcję
             show_prediction(model, images[i], fieldOfView[i])
 
 
